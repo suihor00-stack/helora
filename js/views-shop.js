@@ -6,7 +6,8 @@
    ========================================================================== */
 
 import { frame, esc, money, priceHTML } from './ui.js';
-import { SITE, COLS, PAY_METHODS } from './config.js';
+import { SITE, PAY_METHODS } from './config.js';
+import { colMap, navCollections, collectionTitle } from './collections.js';
 import { listProducts, getProduct, listFields } from './data.js';
 import { getBag, bagSubtotal, isWished } from './store.js';
 
@@ -57,6 +58,16 @@ const row = (items, n, opts) =>
 
 /* ---------- Home ----------------------------------------------------------- */
 
+/** The two category cards on the homepage follow the Shop menu. */
+function homeCats() {
+  const nav = navCollections();
+  const pick = nav.length >= 2 ? nav.slice(0, 2) : nav.slice(0, 2);
+  return pick.length ? pick : [
+    { slug: 'rings', title: 'Rings', intro: '' },
+    { slug: 'earrings', title: 'Earrings', intro: '' }
+  ];
+}
+
 export async function home() {
   const [fresh, picks] = await Promise.all([
     listProducts({ collection: 'newin', limit: 4 }),
@@ -83,14 +94,14 @@ export async function home() {
     <h2 class="sec" data-reveal style="transition-delay:.08s">Find Your Everyday Piece</h2>
   </div>
   <div class="cat-grid">
-    ${[['rings', 'Rings'], ['earrings', 'Earrings']].map(([slug, label], i) => `
+    ${homeCats().map(({ slug, title: label, intro }, i) => `
       <div class="cat-card" data-reveal${i ? ' style="transition-delay:.1s"' : ''}>
         <div data-go="${slug}">
           ${frame(null, `${label} on white background · 556 × 740 px`, { style: 'aspect-ratio:4/5' })}
         </div>
         <div class="center">
           <div class="cat-name">${label}</div>
-          <p class="p" style="font-size:13px;margin:6px 0 0">${esc(COLS[slug][1])}</p>
+          <p class="p" style="font-size:13px;margin:6px 0 0">${esc(intro || '')}</p>
           <div class="lnk" data-go="${slug}" role="button" tabindex="0" style="margin-top:14px">Shop ${label}</div>
         </div>
       </div>`).join('')}
@@ -109,7 +120,7 @@ export async function home() {
     <div class="eb" data-reveal style="margin-bottom:18px">HELORA Picks</div>
     <h2 class="sec" data-reveal style="transition-delay:.08s">HELORA Picks</h2>
     <p class="p" data-reveal style="font-size:15px;max-width:52ch;margin:14px auto 0;transition-delay:.16s">
-      ${esc(COLS.picks[1])}
+      ${esc(colMap().picks ? colMap().picks[1] : '')}
     </p>
   </div>
   <div class="prod-grid" style="padding-top:40px;padding-bottom:48px">
@@ -123,7 +134,7 @@ export async function home() {
     <div class="gift-copy">
       <div class="eb" data-reveal style="margin-bottom:18px">Made for Gifting</div>
       <h2 data-reveal style="font:500 38px/1.16 var(--serif);color:var(--ink);margin:0;transition-delay:.08s">Gifts</h2>
-      <p class="p" data-reveal style="max-width:34ch;margin-top:20px;transition-delay:.16s">${esc(COLS.gifts[1])}</p>
+      <p class="p" data-reveal style="max-width:34ch;margin-top:20px;transition-delay:.16s">${esc(colMap().gifts ? colMap().gifts[1] : '')}</p>
       <div class="lnk" data-reveal data-go="gifts" role="button" tabindex="0"
            style="margin-top:28px;align-self:flex-start;transition-delay:.24s">Explore Gifts →</div>
     </div>
@@ -153,9 +164,7 @@ export async function home() {
 
 export async function collection(slug) {
   const isAll = slug === 'all';
-  const [title, intro] = isAll
-    ? ['Shop All', 'Every HELORA piece, in one place.']
-    : (COLS[slug] || ['Shop All', 'Every HELORA piece, in one place.']);
+  const [title, intro] = collectionTitle(slug);
 
   const items = await listProducts({ collection: isAll ? null : slug, limit: 48 });
 

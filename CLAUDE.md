@@ -158,6 +158,7 @@ supabase/
   schema.sql            the database. Run once in Supabase's SQL Editor
   migration-01-*.sql    original price (compare_at_cents)
   migration-02-*.sql    bilingual products + user-managed spec fields
+  migration-03-*.sql    user-managed collections
 _headers                security settings Cloudflare applies
 ```
 
@@ -206,6 +207,9 @@ achieves nothing.
 - Spec rows on the product page come from the `product_fields` table, not from
   hard-coded columns. Don't reintroduce fixed spec fields; the shop owner
   manages them in 後台 → 欄位設定.
+- Collections come from the `collections` table via `js/collections.js`, loaded
+  once in `boot()`. `COLLECTIONS` in `config.js` is only the seed list and the
+  offline fallback — don't read it directly for anything the shop renders.
 - The design source is the Claude Design project "UI mockups needed",
   file `HELORA Site.dc.html`. Match its look when adding anything.
 

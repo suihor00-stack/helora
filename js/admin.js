@@ -4,7 +4,7 @@
    跟前台一樣，直接用 HTTPS 跟 Supabase 溝通，沒有任何套件。
    ========================================================================== */
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY, COLLECTIONS, SITE, isConfigured } from './config.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, SITE, isConfigured } from './config.js';
 import { esc, slugify } from './ui.js';
 
 const KEY = 'helora.admin.session';
@@ -25,7 +25,9 @@ const L = (zh, en) => `${esc(zh)} <span class="a-en">${esc(en)}</span>`;
 let session  = null;
 let products = [];
 let fields   = [];      // 自訂規格欄位的定義
-let fieldsReady = true; // migration 跑了沒
+let fieldsReady = true; // migration-02 跑了沒
+let cols     = [];      // 分類
+let colsReady = true;   // migration-03 跑了沒
 let editing  = null;    // 正在編輯的商品 id
 
 /* ---------- 登入狀態 -------------------------------------------------------- */
@@ -182,6 +184,33 @@ const updateField = (id, patch) =>
 const deleteField = (id) =>
   rest(`product_fields?id=eq.${id}`, { method: 'DELETE' });
 
+/* ---------- 分類 ------------------------------------------------------------- */
+
+const COL_FULL = 'slug,title,title_zh,intro,sort_order,is_active,show_in_nav';
+
+async function loadCols() {
+  // migration-03 之前沒有 title_zh 那幾欄，先試新的、失敗就退回舊的。
+  try {
+    cols = await rest(`collections?select=${COL_FULL}&order=sort_order.asc`);
+    colsReady = true;
+  } catch {
+    cols = await rest('collections?select=slug,title,intro,sort_order&order=sort_order.asc');
+    colsReady = false;
+  }
+}
+
+const createCol = (row) =>
+  rest('collections', { method: 'POST', body: JSON.stringify(row) });
+
+const updateCol = (slug, patch) =>
+  rest(`collections?slug=eq.${encodeURIComponent(slug)}`, { method: 'PATCH', body: JSON.stringify(patch) });
+
+const deleteCol = (slug) =>
+  rest(`collections?slug=eq.${encodeURIComponent(slug)}`, { method: 'DELETE' });
+
+/* 後台顯示分類用的名字：有中文就用中文。 */
+const colLabel = (c) => c.title_zh || COL_NAME[c.slug] || c.title || c.slug;
+
 /* ---------- 共用外框 --------------------------------------------------------- */
 
 const bar = (active) => `
@@ -190,6 +219,9 @@ const bar = (active) => `
     <span class="a-nav">
       <button class="a-tab${active === 'products' ? ' is-on' : ''}" type="button" data-tab-products>
         商品 <span class="a-en">Products</span>
+      </button>
+      <button class="a-tab${active === 'cols' ? ' is-on' : ''}" type="button" data-tab-cols>
+        分類 <span class="a-en">Collections</span>
       </button>
       <button class="a-tab${active === 'fields' ? ' is-on' : ''}" type="button" data-tab-fields>
         欄位設定 <span class="a-en">Fields</span>
@@ -279,7 +311,7 @@ function listScreen() {
 
 function editScreen(p) {
   editing = p ? p.id : null;
-  const cols   = p ? (p.product_collections || []).map((c) => c.collection_slug) : [];
+  const picked = p ? (p.product_collections || []).map((c) => c.collection_slug) : [];
   const sizes  = p ? ((p.options || []).find((o) => /size/i.test(o.label))?.values || []).join('、') : '';
   const imgs   = p ? (p.product_images || []).slice().sort((a, b) => a.sort_order - b.sort_order) : [];
   const custom = p ? (p.custom || {}) : {};
@@ -363,12 +395,18 @@ function editScreen(p) {
 
         <div class="a-sec">要放在哪些分類 <span class="a-en">Collections</span></div>
         <div class="a-checks">
-          ${COLLECTIONS.filter(([s]) => s !== 'newin' && s !== 'picks').map(([s, t]) => `
+          ${cols.filter((c) => c.slug !== 'newin' && c.slug !== 'picks')
+                // 停用的分類不能再選，但這件商品已經歸在裡面的話還是要看得到
+                .filter((c) => c.is_active !== false || picked.includes(c.slug))
+                .map((c) => `
             <label class="a-check">
-              <input type="checkbox" name="col" value="${s}"${cols.includes(s) ? ' checked' : ''}>
-              <span>${esc(COL_NAME[s] || t)}</span>
+              <input type="checkbox" name="col" value="${esc(c.slug)}"${picked.includes(c.slug) ? ' checked' : ''}>
+              <span>${esc(colLabel(c))}</span>
             </label>`).join('')}
         </div>
+        <p class="a-note">分類清單可以自己增減 —
+          <button class="a-mini" type="button" data-tab-cols>去分類設定</button>
+        </p>
 
         <div class="a-sec">顯示設定 <span class="a-en">Visibility</span></div>
         <div class="a-checks">
@@ -513,6 +551,95 @@ function fieldsScreen() {
     </div>`;
 }
 
+
+/* ---------- 畫面：分類設定 ------------------------------------------------------ */
+
+function colsScreen() {
+  $('#app').innerHTML = `
+    ${bar('cols')}
+    <div class="a-wrap">
+      <h1 class="a-h1">分類 <span class="a-en">Collections</span></h1>
+      <p class="a-sub" style="max-width:62ch;margin-bottom:24px">
+        分類就是網站上的商品分頁（戒指、耳環、送禮…）。這裡改的東西，
+        商品表單的勾選清單、網站上方的 Shop 選單、頁尾連結和分類頁標題都會跟著變。
+      </p>
+
+      <div class="a-err" data-cols-error hidden></div>
+      ${colsReady ? '' : `<div class="a-msg a-warn">
+        資料庫還沒更新。請先到 Supabase → SQL Editor 跑一次
+        <code>supabase/migration-03-collections.sql</code>，然後重新整理這頁。
+      </div>`}
+
+      ${cols.length ? `
+        <form data-cols-form>
+          <table class="a-table">
+            <thead>
+              <tr>
+                <th>${L('中文名稱', 'Chinese')}</th>
+                <th>${L('英文名稱', 'English')}</th>
+                <th>${L('說明（網站上顯示）', 'Intro')}</th>
+                <th class="a-center-c">${L('放上選單', 'In menu')}</th>
+                <th class="a-center-c">${L('排序', 'Order')}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${cols.map((c) => `
+                <tr data-col-row="${esc(c.slug)}"${c.is_active === false ? ' class="a-off"' : ''}>
+                  <td><input class="a-i a-i-sm" data-c="title_zh" value="${esc(c.title_zh || '')}"
+                             ${colsReady ? '' : 'disabled'}></td>
+                  <td><input class="a-i a-i-sm" data-c="title" value="${esc(c.title || '')}"></td>
+                  <td><input class="a-i a-i-sm a-i-wide" data-c="intro" value="${esc(c.intro || '')}"></td>
+                  <td class="a-center-c">
+                    <input type="checkbox" data-c="show_in_nav"${c.show_in_nav ? ' checked' : ''}
+                           ${colsReady ? '' : 'disabled'}>
+                  </td>
+                  <td class="a-center-c">
+                    <input class="a-i a-i-sm a-i-num" data-c="sort_order" type="number" value="${c.sort_order ?? 0}">
+                  </td>
+                  <td class="a-right">
+                    <span class="a-sub" style="margin-right:10px">${esc(c.slug)}</span>
+                    ${colsReady ? `<button class="a-link" type="button" data-toggle-col="${esc(c.slug)}">
+                      ${c.is_active === false ? '啟用' : '停用'}
+                    </button>` : ''}
+                    <button class="a-link a-danger" type="button" data-del-col="${esc(c.slug)}">刪除</button>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+          <div class="a-actions"><button class="btn" type="submit">儲存變更</button></div>
+        </form>`
+        : `<div class="a-empty">還沒有任何分類。</div>`}
+
+      <div class="a-sec" style="margin-top:40px">新增分類 <span class="a-en">Add a collection</span></div>
+      <form data-new-col>
+        <div class="a-grid">
+          <div class="a-f">
+            <label class="a-l" for="nc_zh">${L('中文名稱', 'Chinese')} <span class="a-req">必填</span></label>
+            <input class="a-i" id="nc_zh" name="title_zh" required placeholder="項鍊">
+          </div>
+          <div class="a-f">
+            <label class="a-l" for="nc_en">${L('英文名稱', 'English')} <span class="a-req">必填</span></label>
+            <input class="a-i" id="nc_en" name="title" required placeholder="Necklaces">
+            <p class="a-note">網站上顯示的是這個</p>
+          </div>
+          <div class="a-f a-full">
+            <label class="a-l" for="nc_intro">${L('說明', 'Intro')}</label>
+            <input class="a-i" id="nc_intro" name="intro" placeholder="Fine chains and pendants for every day.">
+          </div>
+        </div>
+        <div class="a-err" hidden></div>
+        <div class="a-actions"><button class="btn" type="submit">新增分類</button></div>
+      </form>
+
+      <p class="a-note" style="margin-top:30px">
+        小提醒：<strong>刪除</strong>分類會讓所有商品失去這個標籤（商品本身還在）。
+        只是暫時不想顯示的話，按<strong>停用</strong>比較安全。
+        <br>「新品上市」和「HELORA 精選」是靠商品自己的勾選決定的，不用在這裡管。
+      </p>
+    </div>`;
+}
+
 /* ---------- 讀表單 ------------------------------------------------------------ */
 
 function readForm(form) {
@@ -553,12 +680,23 @@ const showError = (el, msg) => { if (el) { el.textContent = msg; el.hidden = fal
 
 async function refresh() {
   try {
-    await Promise.all([loadProducts(), loadFields()]);
+    await Promise.all([loadProducts(), loadFields(), loadCols()]);
     listScreen();
   } catch (err) {
     if (!session) return loginScreen('登入時效過了，請重新登入。');
     listScreen();
     showError($('[data-list-error]'), err.message);
+  }
+}
+
+async function showCols() {
+  try {
+    await loadCols();
+    colsScreen();
+  } catch (err) {
+    if (!session) return loginScreen('登入時效過了，請重新登入。');
+    colsScreen();
+    showError($('[data-cols-error]'), err.message);
   }
 }
 
@@ -619,6 +757,63 @@ document.addEventListener('submit', async (e) => {
     } catch (e2) {
       showError(err, e2.message);
       btn.disabled = false; btn.textContent = label;
+    }
+    return;
+  }
+
+  /* 儲存分類（整批） */
+  if (form.matches('[data-cols-form]')) {
+    e.preventDefault();
+    const err = $('[data-cols-error]'); err.hidden = true;
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = '儲存中…';
+    try {
+      for (const row of $$('[data-col-row]', form)) {
+        const get = (k) => row.querySelector(`[data-c="${k}"]`);
+        const patch = {
+          title:      get('title').value.trim(),
+          intro:      get('intro').value.trim(),
+          sort_order: parseInt(get('sort_order').value || '0', 10) || 0
+        };
+        // 這兩欄是 migration-03 才有的
+        if (colsReady) {
+          patch.title_zh    = get('title_zh').value.trim() || null;
+          patch.show_in_nav = get('show_in_nav').checked;
+        }
+        await updateCol(row.dataset.colRow, patch);
+      }
+      await showCols();
+    } catch (e2) {
+      showError($('[data-cols-error]'), e2.message);
+      btn.disabled = false; btn.textContent = '儲存變更';
+    }
+    return;
+  }
+
+  /* 新增分類 */
+  if (form.matches('[data-new-col]')) {
+    e.preventDefault();
+    const err = form.querySelector('.a-err'); err.hidden = true;
+    const zh = form.title_zh.value.trim();
+    const en = form.title.value.trim();
+    if (!zh || !en) return showError(err, '中文和英文名稱都要填。');
+
+    // slug 是網址代號，建立後就固定，改名字不會影響已經歸類好的商品。
+    let slug = slugify(en);
+    if (!slug) slug = `c${Date.now().toString(36)}`;
+    if (cols.some((c) => c.slug === slug)) return showError(err, `網址代號「${slug}」已經有人用了，換一個英文名稱。`);
+
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = '新增中…';
+    try {
+      const row = { slug, title: en, intro: form.intro.value.trim(),
+                    sort_order: (cols.at(-1)?.sort_order ?? 0) + 1 };
+      if (colsReady) { row.title_zh = zh; row.show_in_nav = false; }
+      await createCol(row);
+      await showCols();
+    } catch (e2) {
+      showError(err, e2.message);
+      btn.disabled = false; btn.textContent = '新增分類';
     }
     return;
   }
@@ -694,6 +889,7 @@ document.addEventListener('click', async (e) => {
 
   if (hit('[data-signout]'))     { dropSession(); loginScreen(); return; }
   if (hit('[data-tab-fields]'))  { await showFields(); return; }
+  if (hit('[data-tab-cols]'))    { await showCols(); return; }
   if (hit('[data-tab-products]')){ editing = null; await refresh(); return; }
   if (hit('[data-new]'))         { editScreen(null); return; }
   if (hit('[data-back]'))        { editing = null; await refresh(); return; }
@@ -726,6 +922,25 @@ document.addEventListener('click', async (e) => {
       await loadProducts();
       editScreen(products.find((p) => p.id === editing));
     } catch (err) { showError($('.a-err'), err.message); }
+    return;
+  }
+
+  /* 分類：停用 / 啟用 */
+  const tc = hit('[data-toggle-col]');
+  if (tc) {
+    const c = cols.find((x) => x.slug === tc.dataset.toggleCol);
+    try { await updateCol(c.slug, { is_active: c.is_active === false }); await showCols(); }
+    catch (err) { showError($('[data-cols-error]'), err.message); }
+    return;
+  }
+
+  /* 分類：刪除 */
+  const dc = hit('[data-del-col]');
+  if (dc) {
+    const c = cols.find((x) => x.slug === dc.dataset.delCol);
+    if (!confirm(`刪除分類「${colLabel(c)}」？\n\n所有商品都會失去這個分類標籤（商品本身不會被刪）。\n只是暫時不想顯示的話，選「停用」比較安全。`)) return;
+    try { await deleteCol(c.slug); await showCols(); }
+    catch (err) { showError($('[data-cols-error]'), err.message); }
     return;
   }
 

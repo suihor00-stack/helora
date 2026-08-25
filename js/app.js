@@ -4,7 +4,8 @@
    and handles every click. Start reading at go() and render() near the bottom.
    ========================================================================== */
 
-import { SITE, COLS, COLLECTIONS, isConfigured } from './config.js';
+import { SITE, isConfigured } from './config.js';
+import { loadCollections, allCollections, colMap, navCollections, isCollectionSlug, collectionTitle } from './collections.js';
 import { esc, money, frame, reveals, wireAccordion } from './ui.js';
 import { getProduct, priceBag, placeOrder, trackOrder } from './data.js';
 import * as shop from './views-shop.js';
@@ -39,7 +40,7 @@ const CONTENT_ROUTES = {
   contact: page.contact, legal: page.legal
 };
 
-const isCollection = (r) => r === 'all' || !!COLS[r];
+const isCollection = (r) => isCollectionSlug(r);
 
 /* ---------- header ---------------------------------------------------------- */
 
@@ -55,8 +56,8 @@ function header() {
           <span class="ul hd-shop-t" role="button" tabindex="0" aria-expanded="false">Shop <span>▾</span></span>
           <div class="hd-menu" hidden>
             <div class="hd-menu-in">
-              <span class="ul" data-go="rings">Rings</span>
-              <span class="ul" data-go="earrings">Earrings</span>
+              ${navCollections().map((c) =>
+                `<span class="ul" data-go="${esc(c.slug)}">${esc(c.title)}</span>`).join('')}
               <span class="ul" data-go="all">Shop All</span>
             </div>
           </div>
@@ -76,8 +77,13 @@ function header() {
 
 /* ---------- footer ---------------------------------------------------------- */
 
-const FT_COLS = [
-  ['Shop',  [['rings', 'Rings'], ['earrings', 'Earrings'], ['newin', 'New Arrivals'], ['all', 'Shop All']]],
+const ftShop = () => [
+  ...navCollections().map((c) => [c.slug, c.title]),
+  ['newin', 'New Arrivals'], ['all', 'Shop All']
+];
+
+const FT_COLS = () => [
+  ['Shop',  ftShop()],
   ['About', [['story', 'Our Story'], ['craft', 'Craftsmanship'], ['care', 'Jewelry Care']]],
   ['Help',  [['shipping', 'Shipping'], ['returns', 'Returns'], ['returns', 'Warranty'],
              ['size', 'Ring Size Guide'], ['faq', 'FAQ'], ['contact', 'Contact']]],
@@ -102,7 +108,7 @@ const footer = () => `
         <div class="n">${esc(SITE.name)}</div>
         <div class="d">${esc(SITE.tagline)}<br>${esc(SITE.blurb)}</div>
       </div>
-      ${FT_COLS.map(([h, links]) => `
+      ${FT_COLS().map(([h, links]) => `
         <div>
           <div class="fh">${esc(h)}</div>
           <div class="fc">
@@ -129,7 +135,9 @@ const PAGE_INDEX = [
 ];
 
 const searchIndex = () => [
-  ...COLLECTIONS.map(([slug, title, intro]) => ({ label: title, kind: 'Collection', route: slug, terms: `${title} ${intro}` })),
+  ...allCollections().map((c) => ({
+    label: c.title, kind: 'Collection', route: c.slug, terms: `${c.title} ${c.intro || ''}`
+  })),
   ...PAGE_INDEX.map(([label, route, kind, terms]) => ({ label, kind, route, terms }))
 ];
 
@@ -279,7 +287,7 @@ async function render() {
 function pageTitle() {
   const { route } = state;
   const name = route === 'home' ? SITE.tagline
-    : isCollection(route) ? (route === 'all' ? 'Shop All' : COLS[route][0])
+    : isCollection(route) ? collectionTitle(route)[0]
     : { product: 'Product', producte: 'Product', checkout: 'Checkout', confirmed: 'Order confirmed',
         story: 'Our Story', craft: 'Craftsmanship', size: 'Ring Size Guide', faq: 'FAQ',
         shipping: 'Shipping', care: 'Jewelry Care', returns: 'Returns & Exchanges',
@@ -617,6 +625,7 @@ function setupNotice() {
 
 async function boot() {
   setupNotice();
+  await loadCollections();     // the nav and every collection page depend on these
   try {
     const saved = sessionStorage.getItem('helora.order');
     if (saved) state.order = JSON.parse(saved);
