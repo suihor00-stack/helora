@@ -4,7 +4,7 @@
    Everything else reads from here.
    ========================================================================== */
 
-export const SUPABASE_URL      = 'PASTE_YOUR_PROJECT_URL_HERE';
+export const SUPABASE_URL      = 'https://ezhcfpuhxwncukzktaeh.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_Bfqp2LmEcHTq38MG-fCfBw_Wc76IiHw';
 
 /* Where these come from: Supabase -> Project Settings -> API keys.
