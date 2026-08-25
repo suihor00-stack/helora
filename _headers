@@ -7,5 +7,9 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co; form-action 'self'; base-uri 'self'; frame-ancestors 'none'
 
+# Cloudflare serves this as /admin (it strips .html), so cover both paths.
+/admin
+  X-Robots-Tag: noindex, nofollow
+
 /admin.html
   X-Robots-Tag: noindex, nofollow

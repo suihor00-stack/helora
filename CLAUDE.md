@@ -1,5 +1,7 @@
 # HELORA
 
+**Live at <https://helora.suihor00.workers.dev>** — the admin is at `/admin`.
+
 An online jewelry shop. Built from the HELORA design in Claude Design, running
 as a plain website on Cloudflare, with Supabase holding the products and orders.
 
@@ -59,7 +61,8 @@ automatically.
 
 ### 4. Make yourself the admin
 
-1. Open `https://your-site.pages.dev/admin.html`.
+1. Open `https://helora.suihor00.workers.dev/admin` (Cloudflare strips the
+   `.html`, so `/admin.html` redirects there).
 2. Enter your email and a password, click **First time? Create the account**.
 3. Back in Supabase → **SQL Editor**, run this with your own email:
 
@@ -77,7 +80,7 @@ automatically.
 
 ### Add a product
 
-Open `/admin.html`, sign in, click **Add a piece**. Fill in the name and price,
+Open `/admin`, sign in, click **Add a piece**. Fill in the name and price,
 save, then add photos. Tick **New Arrivals** or **HELORA Picks** to make it show
 on the homepage, and tick the collections it belongs to.
 
