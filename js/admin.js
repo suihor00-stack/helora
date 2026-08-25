@@ -93,6 +93,7 @@ async function saveProduct(form) {
     tag:         form.tag,
     description: form.description,
     price_cents: form.price_cents,
+    compare_at_cents: form.compare_at_cents,
     kind:        form.kind,
     material:    form.material,
     finish:      form.finish,
@@ -214,7 +215,12 @@ function listScreen() {
                   <div class="a-name">${esc(p.name)}</div>
                   <div class="a-sub">${esc(p.slug)}${p.is_active ? '' : ' · 已隱藏'}${p.in_stock === false ? ' · 缺貨' : ''}</div>
                 </td>
-                <td>${SITE.currency} ${(p.price_cents / 100).toFixed(2)}</td>
+                <td>
+                  ${SITE.currency} ${(p.price_cents / 100).toFixed(2)}
+                  ${p.compare_at_cents > p.price_cents
+                    ? `<div class="a-sub" style="text-decoration:line-through">${SITE.currency} ${(p.compare_at_cents / 100).toFixed(2)}</div>`
+                    : ''}
+                </td>
                 <td class="a-sub">${cols.length ? esc(cols.join('、')) : '—'}</td>
                 <td class="a-sub">${[p.is_new && '新品', p.is_pick && '精選'].filter(Boolean).join('、') || '—'}</td>
                 <td class="a-right">
@@ -268,6 +274,12 @@ function editScreen(p) {
             <label class="a-l" for="price">價錢（${esc(SITE.currency)}）<span class="a-req">必填</span></label>
             <input class="a-i" id="price" name="price" type="number" step="0.01" min="0" required
                    value="${p ? (p.price_cents / 100).toFixed(2) : ''}" placeholder="189.00">
+          </div>
+          <div class="a-f">
+            <label class="a-l" for="compare_at">原價（留空＝沒特價）</label>
+            <input class="a-i" id="compare_at" name="compare_at" type="number" step="0.01" min="0"
+                   value="${p?.compare_at_cents != null ? (p.compare_at_cents / 100).toFixed(2) : ''}"
+                   placeholder="289.00">
           </div>
           <div class="a-f">
             <label class="a-l" for="kind">類型</label>
@@ -362,6 +374,7 @@ function readForm(form) {
     tag:         g('tag'),
     description: g('description'),
     price_cents: Math.round(parseFloat(g('price') || '0') * 100),
+    compare_at_cents: g('compare_at') ? Math.round(parseFloat(g('compare_at')) * 100) : null,
     kind:        g('kind') || 'ring',
     material:    g('material'),
     finish:      g('finish'),
@@ -418,6 +431,10 @@ document.addEventListener('submit', async (e) => {
     if (!data.name)  return showError(err, '請填商品名稱。');
     if (!data.slug)  return showError(err, '商品名稱要有至少一個英文字母或數字，好產生網址代號。');
     if (Number.isNaN(data.price_cents)) return showError(err, '價錢好像怪怪的，再確認一下。');
+    if (data.compare_at_cents != null &&
+        (Number.isNaN(data.compare_at_cents) || data.compare_at_cents <= data.price_cents)) {
+      return showError(err, '原價要比現在的售價高才算折扣，不然就留空。');
+    }
 
     const btn = form.querySelector('button[type=submit]');
     const label = btn.textContent;

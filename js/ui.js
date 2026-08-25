@@ -20,6 +20,18 @@ export function money(cents) {
 }
 
 /**
+ * Price, with the old price struck through when the piece is on offer.
+ * Anything that isn't a genuine reduction is ignored, so a stray value in
+ * the admin can't render "RM 189 was RM 12".
+ */
+export function priceHTML(priceCents, compareAtCents) {
+  const onOffer = compareAtCents != null && compareAtCents > priceCents;
+  if (!onOffer) return money(priceCents);
+  return `<span class="price-now">${money(priceCents)}</span>` +
+         `<span class="price-was">${money(compareAtCents)}</span>`;
+}
+
+/**
  * An image frame. Shows the picture if there is one, otherwise the grey
  * caption box from the design ("Product on white · 268 × 268 px").
  */

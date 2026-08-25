@@ -333,6 +333,15 @@ a { color: var(--ink); text-decoration: none; }
 .prod-name  { font: 500 15px/1.4 var(--sans); color: var(--ink); }
 .prod-price { font: 400 13.5px/1.7 var(--sans); color: var(--body); }
 .prod-name.is-empty, .prod-price.is-empty { color: var(--ghost); }
+/* 特價時，舊價劃掉放在現價旁邊 */
+.price-was {
+  margin-left: 9px;
+  color: var(--soft);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.pd-price .price-was { font-size: .72em; margin-left: 12px; }
+
 .prod-add {
   margin-top: 12px;
   font: 400 10px/1 var(--sans);

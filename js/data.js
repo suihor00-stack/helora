@@ -46,6 +46,7 @@ function shape(row) {
     tag:         row.tag || '',
     description: row.description || '',
     priceCents:  row.price_cents ?? 0,
+    compareAtCents: row.compare_at_cents ?? null,
     kind:        row.kind || 'ring',
     material:    row.material || '',
     finish:      row.finish || '',

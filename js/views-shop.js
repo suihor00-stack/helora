@@ -5,7 +5,7 @@
    fall back to the empty state from the design.
    ========================================================================== */
 
-import { frame, esc, money } from './ui.js';
+import { frame, esc, money, priceHTML } from './ui.js';
 import { SITE, COLS, PAY_METHODS } from './config.js';
 import { listProducts, getProduct } from './data.js';
 import { getBag, bagSubtotal, isWished } from './store.js';
@@ -41,7 +41,7 @@ export function productCard(p, { shape = '4/5', showAdd = true, showWish = true 
       </div>
       <div>
         <div class="prod-name" data-product="${esc(p.slug)}" style="cursor:pointer">${esc(p.name)}</div>
-        <div class="prod-price">${money(p.priceCents)}</div>
+        <div class="prod-price">${priceHTML(p.priceCents, p.compareAtCents)}</div>
         ${!p.inStock
           ? `<div class="prod-add" style="cursor:default">Sold out</div>`
           : showAdd
@@ -226,7 +226,7 @@ export async function product(slug, kindHint = 'ring') {
     <div class="pd-info">
       <div class="pd-tag">${esc(p?.tag || (earrings ? 'Earrings' : 'Tag'))}</div>
       <h1 class="pd-name${p ? '' : ' is-empty'}">${esc(p?.name || 'Product name')}</h1>
-      <div class="pd-price${p ? '' : ' is-empty'}">${p ? money(p.priceCents) : `${SITE.currency} —`}</div>
+      <div class="pd-price${p ? '' : ' is-empty'}">${p ? priceHTML(p.priceCents, p.compareAtCents) : `${SITE.currency} —`}</div>
       <p class="pd-desc${p ? '' : ' is-empty'}">
         ${esc(p?.description || 'Product description — written per piece in the admin.')}
       </p>
