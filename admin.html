@@ -73,6 +73,28 @@
   .a-err { background: #fdf1ef; border: 1px solid #e8c8c2; color: #8f3a30; padding: 12px 14px; font: 400 13px/1.6 var(--sans); margin: 12px 0; }
   .a-msg { background: #f3f6f1; border: 1px solid #cfdcc7; color: #4a5f3f; padding: 12px 14px; font: 400 13px/1.6 var(--sans); margin-bottom: 18px; }
 
+  /* 區塊標題 */
+  .a-sec {
+    font: 500 11px/1 var(--sans); letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ink); margin: 34px 0 16px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .a-sec:first-of-type { margin-top: 8px; }
+  .a-req { color: #b06a5e; letter-spacing: .1em; margin-left: 6px; }
+  .a-hint { background: #fbfaf8; border: 1px dashed var(--field); padding: 14px 16px; }
+
+  /* 進階設定收合區 */
+  .a-adv { margin-top: 34px; border-top: 1px solid var(--line); padding-top: 18px; }
+  .a-adv > summary {
+    cursor: pointer; list-style: none;
+    font: 400 12.5px/1.5 var(--sans); color: var(--muted);
+    padding: 6px 0; user-select: none;
+  }
+  .a-adv > summary::-webkit-details-marker { display: none; }
+  .a-adv > summary::before { content: '▸ '; color: var(--soft); }
+  .a-adv[open] > summary::before { content: '▾ '; }
+  .a-adv > summary:hover { color: var(--ink); }
+
   .a-photos { margin: 26px 0; }
   .a-imgs { display: flex; flex-wrap: wrap; gap: 12px; }
   .a-img { position: relative; width: 104px; height: 104px; border: 1px solid var(--line); }
