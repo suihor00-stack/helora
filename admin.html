@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HELORA — Shop admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231a1a1a'/><text x='50' y='68' font-size='58' font-family='Georgia,serif' text-anchor='middle' fill='%23fff'>H</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/helora.css">
+<style>
+  body { background: #fbfaf8; }
+
+  .a-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 28px; background: #fff; border-bottom: 1px solid var(--line);
+  }
+  .a-bar-r { display: flex; gap: 20px; align-items: center; }
+  .a-logo { font: 500 20px/1 var(--serif); letter-spacing: .3em; text-indent: .3em; }
+
+  .a-center { min-height: 100vh; display: grid; place-items: center; padding: 40px 20px; }
+  .a-card { background: #fff; border: 1px solid var(--line); padding: 40px; width: 100%; max-width: 560px; }
+  .a-wrap { max-width: 1000px; margin: 0 auto; padding: 34px 28px 90px; }
+
+  .a-h1 { font: 500 30px/1.2 var(--serif); margin: 18px 0 24px; }
+  .a-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
+  .a-head .a-h1 { margin: 0; }
+  .a-count { font: 400 14px/1 var(--sans); color: var(--soft); vertical-align: middle; margin-left: 6px; }
+
+  .a-l { display: block; font: 500 10.5px/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .a-i {
+    width: 100%; border: 1px solid var(--field); background: #fff;
+    padding: 12px 13px; font: 400 14px/1.4 var(--sans); outline: none;
+    transition: border-color .2s; margin-bottom: 16px;
+  }
+  .a-i:focus { border-color: var(--ink); }
+  textarea.a-i { resize: vertical; }
+
+  .a-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+  .a-f.a-full { grid-column: 1 / -1; }
+
+  .a-checks { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 20px; }
+  .a-check { display: flex; align-items: center; gap: 8px; font: 400 13.5px/1 var(--sans); color: var(--body); cursor: pointer; }
+  .a-check input { width: 15px; height: 15px; accent-color: #1a1a1a; }
+
+  .a-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); }
+  .a-table th {
+    text-align: left; font: 500 10px/1 var(--sans); letter-spacing: .18em;
+    text-transform: uppercase; color: var(--muted); padding: 14px 16px; border-bottom: 1px solid var(--line);
+  }
+  .a-table td { padding: 12px 16px; border-bottom: 1px solid var(--line-faint); font: 400 13.5px/1.5 var(--sans); vertical-align: middle; }
+  .a-table tr:last-child td { border-bottom: none; }
+  .a-right { text-align: right; white-space: nowrap; }
+  .a-name { font-weight: 500; color: var(--ink); }
+  .a-sub  { font: 400 12px/1.6 var(--sans); color: var(--soft); }
+  .a-sub code { background: #f3f1ec; padding: 2px 5px; font-size: 11.5px; }
+
+  .a-thumb { width: 46px; height: 46px; object-fit: cover; border: 1px solid var(--line); display: block; }
+  .a-thumb-empty { background: #f3f1ec; }
+
+  .a-link {
+    font: 500 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); cursor: pointer; background: none; border: none; padding: 6px 8px;
+    text-decoration: none;
+  }
+  .a-link:hover { color: var(--ink); }
+  .a-danger:hover { color: #a4443a; }
+
+  .a-empty { background: #fff; border: 1px dashed var(--field); padding: 60px 30px; text-align: center; font: 300 15px/1.8 var(--sans); color: var(--soft); }
+
+  .a-err { background: #fdf1ef; border: 1px solid #e8c8c2; color: #8f3a30; padding: 12px 14px; font: 400 13px/1.6 var(--sans); margin: 12px 0; }
+  .a-msg { background: #f3f6f1; border: 1px solid #cfdcc7; color: #4a5f3f; padding: 12px 14px; font: 400 13px/1.6 var(--sans); margin-bottom: 18px; }
+
+  .a-photos { margin: 26px 0; }
+  .a-imgs { display: flex; flex-wrap: wrap; gap: 12px; }
+  .a-img { position: relative; width: 104px; height: 104px; border: 1px solid var(--line); }
+  .a-img img { width: 100%; height: 100%; object-fit: cover; }
+  .a-x {
+    position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%;
+    background: #1a1a1a; color: #fff; font-size: 15px; line-height: 24px; text-align: center; cursor: pointer;
+  }
+  .a-add {
+    width: 104px; height: 104px; border: 1px dashed var(--field); display: grid; place-items: center;
+    cursor: pointer; font: 400 11.5px/1.4 var(--sans); color: var(--muted); text-align: center; padding: 8px;
+  }
+  .a-add:hover { border-color: var(--ink); color: var(--ink); }
+
+  .a-actions { display: flex; align-items: center; gap: 16px; margin-top: 26px; }
+
+  @media (max-width: 720px) {
+    .a-grid { grid-template-columns: 1fr; }
+    .a-wrap, .a-card { padding-left: 18px; padding-right: 18px; }
+    .a-table thead { display: none; }
+    .a-table, .a-table tbody, .a-table tr, .a-table td { display: block; width: 100%; }
+    .a-table tr { border-bottom: 1px solid var(--line); padding: 12px 4px; }
+    .a-table td { border: none; padding: 4px 12px; }
+    .a-right { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module" src="./js/admin.js"></script>
+</body>
+</html>
