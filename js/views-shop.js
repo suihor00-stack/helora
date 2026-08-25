@@ -7,7 +7,7 @@
 
 import { frame, esc, money, priceHTML } from './ui.js';
 import { SITE, COLS, PAY_METHODS } from './config.js';
-import { listProducts, getProduct } from './data.js';
+import { listProducts, getProduct, listFields } from './data.js';
 import { getBag, bagSubtotal, isWished } from './store.js';
 
 /* ---------- reusable product card ------------------------------------------ */
@@ -191,13 +191,13 @@ export async function product(slug, kindHint = 'ring') {
   const backTo   = earrings ? 'earrings' : 'rings';
   const [main, ...rest] = p ? p.images : [];
 
-  const specs = earrings
-    ? [['Material', p?.material], ['Finish', p?.finish], ['Drop / diameter', p?.dimensions],
-       ['Fitting', 'Post / hoop / clip'], ['Weight per earring', p?.weight], ['SKU', p?.sku],
-       ['Warranty', 'Limited Lifetime Craftsmanship Warranty']]
-    : [['Material', p?.material], ['Finish', p?.finish], ['Dimensions', p?.dimensions],
-       ['Weight', p?.weight], ['SKU', p?.sku],
-       ['Warranty', 'Limited Lifetime Craftsmanship Warranty']];
+  // These rows come from 後台 -> 欄位設定, so the shop owner controls them
+  // without anyone touching this file.
+  const fields = await listFields();
+  const specs = fields
+    .filter((f) => f.show_on_page)
+    .map((f) => [f.label_en || f.label_zh, p ? (p.custom?.[f.key] || '') : ''])
+    .concat([['Warranty', 'Limited Lifetime Craftsmanship Warranty']]);
 
   const soldOut = !!p && !p.inStock;
   const buyable = !!p && !soldOut;
@@ -236,7 +236,8 @@ export async function product(slug, kindHint = 'ring') {
       ${(p?.options || []).map((opt) => `
         <div class="pd-field">
           <div class="pd-label">${esc(opt.label)}</div>
-          <select class="pd-select" data-option="${esc(opt.label)}">
+          <select class="pd-select" data-option="${esc(opt.label)}" data-required>
+            <option value="">Select ${esc(String(opt.label).toLowerCase())}</option>
             ${(opt.values || []).map((v) => `<option value="${esc(v)}">${esc(v)}</option>`).join('')}
           </select>
           ${/size/i.test(opt.label)
@@ -263,6 +264,8 @@ export async function product(slug, kindHint = 'ring') {
           <button type="button" data-qty="1" aria-label="Increase quantity">＋</button>
         </div>
       </div>
+
+      <div class="pd-warn" data-option-warn hidden>Please choose a size first.</div>
 
       <div class="pd-actions">
         <button class="btn" type="button" data-buy="${esc(p?.slug || '')}" ${buyable ? '' : 'disabled'}>

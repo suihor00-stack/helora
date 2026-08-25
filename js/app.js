@@ -307,6 +307,13 @@ function showToast() {
 async function addBySlug(slug, { qty = 1, option = '', then = null } = {}) {
   const p = await getProduct(slug);
   if (!p) return;
+
+  // Quick Add can't guess a ring size, so send them to the product page to pick.
+  if (!option && p.options.length) {
+    go('product', p.slug);
+    return;
+  }
+
   addToBag({
     id: p.id, name: p.name, slug: p.slug,
     priceCents: p.priceCents,
@@ -318,7 +325,23 @@ async function addBySlug(slug, { qty = 1, option = '', then = null } = {}) {
 
 /** Reads every option dropdown on a product page, e.g. "Size 12 · Silver". */
 function chosenOption() {
-  return $$('[data-option]').map((s) => s.value).filter(Boolean).join(' · ');
+  return $$('[data-option]').map((sel) => sel.value).filter(Boolean).join(' · ');
+}
+
+/**
+ * A ring without a size isn't a real order line, so the bag stays shut until
+ * every required dropdown has been answered.
+ */
+function optionsChosen() {
+  const required = $$('[data-option][data-required]');
+  const missing  = required.filter((sel) => !sel.value);
+  const warn     = $('[data-option-warn]');
+  if (warn) warn.hidden = missing.length === 0;
+  if (missing.length) {
+    missing[0].focus();
+    return false;
+  }
+  return true;
 }
 
 /* ---------- events ---------------------------------------------------------------- */
@@ -422,12 +445,14 @@ function wireGlobalEvents() {
 
     const buy = hit('[data-buy]');
     if (buy && buy.dataset.buy) {
+      if (!optionsChosen()) return;
       await addBySlug(buy.dataset.buy, { qty: state.qty, option: chosenOption() });
       return;
     }
 
     const buyNow = hit('[data-buy-now]');
     if (buyNow && buyNow.dataset.buyNow) {
+      if (!optionsChosen()) return;
       await addBySlug(buyNow.dataset.buyNow, {
         qty: state.qty, option: chosenOption(), then: () => go('checkout')
       });
@@ -460,6 +485,14 @@ function wireGlobalEvents() {
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       $$('.side-nav button').forEach((b) => b.classList.toggle('is-on', b === jump));
       return;
+    }
+  });
+
+  // Choosing a size clears the warning straight away.
+  document.addEventListener('change', (e) => {
+    if (e.target.matches('[data-option][data-required]') && e.target.value) {
+      const warn = $('[data-option-warn]');
+      if (warn) warn.hidden = true;
     }
   });
 

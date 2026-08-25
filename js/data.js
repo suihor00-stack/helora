@@ -43,8 +43,11 @@ function shape(row) {
     id:          row.id,
     slug:        row.slug,
     name:        row.name,
+    nameZh:      row.name_zh || '',
     tag:         row.tag || '',
     description: row.description || '',
+    descriptionZh: row.description_zh || '',
+    custom:      row.custom || {},
     priceCents:  row.price_cents ?? 0,
     compareAtCents: row.compare_at_cents ?? null,
     kind:        row.kind || 'ring',
@@ -121,6 +124,16 @@ export async function listCollections() {
   if (!isConfigured()) return [];
   try {
     return await req(api('collections?select=*&order=sort_order.asc'));
+  } catch {
+    return [];
+  }
+}
+
+/** The spec fields the shop owner has set up in 後台 -> 欄位設定. */
+export async function listFields() {
+  if (!isConfigured()) return [];
+  try {
+    return await req(api('product_fields?select=*&is_active=eq.true&order=sort_order.asc'));
   } catch {
     return [];
   }

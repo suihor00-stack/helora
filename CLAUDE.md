@@ -154,7 +154,10 @@ js/
   views-content.js      the written pages (story, FAQ, shipping, legal…)
   app.js                header, footer, search, bag, and the router
   admin.js              the admin page
-supabase/schema.sql     the database. Run once in Supabase's SQL Editor
+supabase/
+  schema.sql            the database. Run once in Supabase's SQL Editor
+  migration-01-*.sql    original price (compare_at_cents)
+  migration-02-*.sql    bilingual products + user-managed spec fields
 _headers                security settings Cloudflare applies
 ```
 
@@ -195,6 +198,14 @@ achieves nothing.
 - **Never** put the `service_role` key anywhere in this folder.
 - Changing `supabase/schema.sql` doesn't change the live database — the user has
   to paste it into Supabase's SQL Editor and run it. Say so when you change it.
+- For an existing database, add a numbered file (`supabase/migration-NN-*.sql`)
+  rather than editing `schema.sql` in place, and make it safe to run twice
+  (`add column if not exists`, `on conflict do nothing`). Tell the user to run
+  it, and make the code degrade gracefully until they do — see how
+  `loadFields()` in `js/admin.js` falls back when the table isn't there yet.
+- Spec rows on the product page come from the `product_fields` table, not from
+  hard-coded columns. Don't reintroduce fixed spec fields; the shop owner
+  manages them in 後台 → 欄位設定.
 - The design source is the Claude Design project "UI mockups needed",
   file `HELORA Site.dc.html`. Match its look when adding anything.
 

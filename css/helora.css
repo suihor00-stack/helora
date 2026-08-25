@@ -423,6 +423,8 @@ a { color: var(--ink); text-decoration: none; }
 .pd-spec-row span:last-child  { color: var(--ink); text-align: right; }
 .pd-note { font: 400 12px/1.7 var(--sans); color: var(--soft); margin-top: 18px; }
 
+.pd-warn { font: 400 12.5px/1.6 var(--sans); color: #a4443a; margin: -10px 0 16px; }
+
 .pd-hygiene { font: 400 12px/1.7 var(--sans); color: var(--soft); margin-top: 18px; padding: 14px 16px; background: #fbfaf8; border: 1px solid var(--line-faint); }
 .pd-pair { font: 400 12.5px/1.6 var(--sans); color: var(--muted); margin: 18px 0 26px; }
 
