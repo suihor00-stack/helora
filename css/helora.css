@@ -519,6 +519,23 @@ a { color: var(--ink); text-decoration: none; }
 .pay-n { font: 400 14px/1.4 var(--sans); color: var(--ink); flex: 1; }
 .pay-m { font: 400 11.5px/1.4 var(--sans); color: var(--soft); }
 
+.pay-note {
+  border: 1px solid var(--line);
+  background: #fbfaf8;
+  padding: 18px 20px;
+}
+.pay-note-t {
+  font: 500 12.5px/1.4 var(--sans);
+  color: var(--ink);
+  margin-bottom: 7px;
+}
+.pay-note p {
+  font: 300 13px/1.75 var(--sans);
+  color: var(--muted);
+  margin: 0;
+  max-width: 46ch;
+}
+
 .co-fine { font: 400 11.5px/1.7 var(--sans); color: var(--soft); margin-top: 16px; }
 
 .co-sum { padding: 46px var(--pad) 70px; position: sticky; top: 0; }

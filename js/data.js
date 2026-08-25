@@ -159,6 +159,42 @@ export async function placeOrder({ customer, items, paymentMethod }) {
   });
 }
 
+/**
+ * Hands the bag to Stripe and gets back a payment page to send the customer to.
+ * The order is created inside the Edge Function, priced from the products
+ * table, so nothing here is trusted.
+ */
+export async function createStripeCheckout({ customer, items }) {
+  if (!isConfigured()) throw new Error('The shop isn’t connected to its database yet.');
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      customer,
+      items: items.map((i) => ({ id: i.id, qty: i.qty, option: i.option || null }))
+    })
+  });
+
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body?.url) {
+    throw new Error(body?.error || 'We couldn’t reach the payment page. Please try again.');
+  }
+  return body;                      // { url, order_no, total_cents }
+}
+
+/** "paid" / "pending_payment" / ... for the confirmation page. */
+export async function orderStatus(orderNo) {
+  if (!isConfigured() || !orderNo) return null;
+  try {
+    return await req(api('rpc/order_status'), {
+      method: 'POST', body: JSON.stringify({ p_order_no: orderNo })
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** Looks up one order for the "Track your order" box. */
 export async function trackOrder(orderNo, email) {
   if (!isConfigured()) throw new Error('The shop isn’t connected to its database yet.');

@@ -4,10 +4,10 @@
    and handles every click. Start reading at go() and render() near the bottom.
    ========================================================================== */
 
-import { SITE, isConfigured } from './config.js';
+import { SITE, CHECKOUT_MODE, isConfigured } from './config.js';
 import { loadCollections, allCollections, colMap, navCollections, isCollectionSlug, collectionTitle } from './collections.js';
 import { esc, money, frame, reveals, wireAccordion } from './ui.js';
-import { getProduct, priceBag, placeOrder, trackOrder } from './data.js';
+import { getProduct, priceBag, placeOrder, trackOrder, createStripeCheckout, orderStatus } from './data.js';
 import * as shop from './views-shop.js';
 import * as page from './views-content.js';
 import {
@@ -578,17 +578,29 @@ async function onSubmit(e) {
     const btn = form.querySelector('button[type=submit]');
     const label = btn.textContent;
     btn.disabled = true;
-    btn.textContent = 'Placing your order…';
+    btn.textContent = CHECKOUT_MODE === 'stripe' ? 'Taking you to payment…' : 'Placing your order…';
+
+    const lines = bag.map((b) => ({
+      name: b.name, option: b.option, qty: b.qty, unit_price_cents: b.priceCents, image: b.image
+    }));
 
     try {
+      if (CHECKOUT_MODE === 'stripe') {
+        const { url, order_no, total_cents } = await createStripeCheckout({ customer: data, items: bag });
+        // Remember what was bought so the confirmation page can show it when
+        // Stripe sends them back. The bag is only emptied once payment lands —
+        // if they back out, everything is still there.
+        try {
+          sessionStorage.setItem('helora.pending', JSON.stringify({
+            order_no, total_cents, items: lines, email: data.email
+          }));
+        } catch {}
+        location.href = url;
+        return;
+      }
+
       const order = await placeOrder({ customer: data, items: bag, paymentMethod: state.pay });
-      state.order = {
-        ...order,
-        payment_method: state.pay,
-        items: order.items || bag.map((b) => ({
-          name: b.name, option: b.option, qty: b.qty, unit_price_cents: b.priceCents, image: b.image
-        }))
-      };
+      state.order = { ...order, payment_method: state.pay, items: order.items || lines };
       try { sessionStorage.setItem('helora.order', JSON.stringify(state.order)); } catch {}
       clearBag();
       go('confirmed');
@@ -623,13 +635,51 @@ function setupNotice() {
     </div>`;
 }
 
+/**
+ * Stripe sends the customer back to /?order=HEL-…&paid=1#confirmed.
+ * Pick that up, empty the bag, and ask the database whether the money
+ * actually landed rather than taking the redirect's word for it.
+ */
+async function handleStripeReturn() {
+  const params = new URLSearchParams(location.search);
+  const orderNo = params.get('order');
+  if (!orderNo || params.get('paid') !== '1') return false;
+
+  let pending = null;
+  try { pending = JSON.parse(sessionStorage.getItem('helora.pending')); } catch {}
+
+  const status = await orderStatus(orderNo);
+
+  state.order = {
+    order_no: orderNo,
+    total_cents: pending?.total_cents ?? null,
+    items: pending?.items ?? [],
+    payment_method: 'card',
+    status: status || 'pending_payment'
+  };
+  try {
+    sessionStorage.setItem('helora.order', JSON.stringify(state.order));
+    sessionStorage.removeItem('helora.pending');
+  } catch {}
+
+  clearBag();
+
+  // Drop the query string so a refresh doesn't replay all of this.
+  history.replaceState(null, '', `${location.pathname}#confirmed`);
+  return true;
+}
+
 async function boot() {
   setupNotice();
   await loadCollections();     // the nav and every collection page depend on these
-  try {
-    const saved = sessionStorage.getItem('helora.order');
-    if (saved) state.order = JSON.parse(saved);
-  } catch {}
+
+  const returned = await handleStripeReturn();
+  if (!returned) {
+    try {
+      const saved = sessionStorage.getItem('helora.order');
+      if (saved) state.order = JSON.parse(saved);
+    } catch {}
+  }
 
   wireGlobalEvents();
   await render();

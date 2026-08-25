@@ -6,7 +6,7 @@
    ========================================================================== */
 
 import { frame, esc, money, priceHTML } from './ui.js';
-import { SITE, PAY_METHODS } from './config.js';
+import { SITE, PAY_METHODS, CHECKOUT_MODE } from './config.js';
 import { colMap, navCollections, collectionTitle } from './collections.js';
 import { listProducts, getProduct, listFields } from './data.js';
 import { getBag, bagSubtotal, isWished } from './store.js';
@@ -353,18 +353,26 @@ export function checkout() {
       </div>
 
       <div class="pay-head">Payment</div>
-      <div role="radiogroup" aria-label="Payment method">
-        ${PAY_METHODS.map((m, i) => `
-          <button class="pay-opt${i === 0 ? ' is-on' : ''}" type="button" role="radio"
-                  aria-checked="${i === 0}" data-pay="${m.id}">
-            <span class="pay-dot"></span>
-            <span class="pay-n">${esc(m.name)}</span>
-            <span class="pay-m">${esc(m.meta)}</span>
-          </button>`).join('')}
-      </div>
+      ${CHECKOUT_MODE === 'stripe' ? `
+        <div class="pay-note">
+          <div class="pay-note-t">You'll choose how to pay on the next step</div>
+          <p>Card, online banking (FPX) and e-wallets, on Stripe's secure page.
+             Your card details never touch this site.</p>
+        </div>`
+      : `
+        <div role="radiogroup" aria-label="Payment method">
+          ${PAY_METHODS.map((m, i) => `
+            <button class="pay-opt${i === 0 ? ' is-on' : ''}" type="button" role="radio"
+                    aria-checked="${i === 0}" data-pay="${m.id}">
+              <span class="pay-dot"></span>
+              <span class="pay-n">${esc(m.name)}</span>
+              <span class="pay-m">${esc(m.meta)}</span>
+            </button>`).join('')}
+        </div>`}
 
       <button class="btn" type="submit" style="width:100%;margin-top:26px"${bag.length ? '' : ' disabled'}>
-        ${bag.length ? 'Place Order' : 'Your bag is empty'}
+        ${!bag.length ? 'Your bag is empty'
+          : CHECKOUT_MODE === 'stripe' ? 'Continue to Payment' : 'Place Order'}
       </button>
       <div class="err" data-form-error hidden style="margin-top:12px;color:#a4443a;font:400 13px/1.6 Inter,sans-serif"></div>
       <p class="co-fine">
@@ -410,15 +418,26 @@ export function confirmed(order) {
   const method = PAY_METHODS.find((m) => m.id === order?.payment_method);
   const items  = order?.items || [];
   const steps  = ['Paid', 'Preparing', 'Shipped', 'Delivered'];
-  const at     = Math.max(0, steps.findIndex((s) => s.toLowerCase() === (order?.status || 'paid')));
+
+  const status  = order?.status || (order ? 'paid' : '');
+  const settled = status === 'paid' || ['preparing', 'shipped', 'delivered'].includes(status);
+  // Anything still waiting on the bank sits before the first step.
+  const at = settled
+    ? Math.max(0, steps.findIndex((s) => s.toLowerCase() === status))
+    : -1;
+
+  const head = settled
+    ? { tag: 'Payment Received', title: 'Thank you.',
+        note: 'Your order is confirmed. Once your order ships, we’ll send tracking details by email.' }
+    : { tag: 'Payment Processing', title: 'Almost there.',
+        note: 'Your bank hasn’t confirmed the payment yet — this can take a few minutes with ' +
+              'online banking. We’ll email you as soon as it clears, and your order number is safe to quote.' };
 
   return `
   <div class="cf-head">
-    <div class="tag">${order ? 'Payment Received' : 'Order'}</div>
-    <h1>Thank you.</h1>
-    <p class="p" style="max-width:48ch;margin:0 auto">
-      Your order is confirmed. Once your order ships, we’ll send tracking details by email.
-    </p>
+    <div class="tag">${order ? esc(head.tag) : 'Order'}</div>
+    <h1>${esc(head.title)}</h1>
+    <p class="p" style="max-width:48ch;margin:0 auto">${esc(head.note)}</p>
   </div>
 
   <div class="cf-meta">

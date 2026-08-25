@@ -35,9 +35,17 @@ export const SITE = {
   instagram:''
 };
 
-/* Payment methods shown at checkout. Right now choosing one records the order
-   in the database with status "pending_payment" — it does NOT take money yet.
-   See CLAUDE.md → "Taking real payments" for how to switch this on. */
+/* How checkout behaves.
+     'stripe'      — the customer is sent to Stripe's secure payment page and
+                     really pays. Needs the two Edge Functions deployed; see
+                     CLAUDE.md → "Taking payments with Stripe".
+     'record-only' — the order is saved but no money moves. Useful before the
+                     Stripe side is set up, or if you take payment by hand. */
+export const CHECKOUT_MODE = 'stripe';
+
+/* Only used when CHECKOUT_MODE is 'record-only'. With Stripe, the customer
+   picks how to pay on Stripe's own page, using whatever you switched on in
+   your Stripe dashboard. */
 export const PAY_METHODS = [
   { id: 'duitnow', name: 'DuitNow QR',            meta: 'Any bank app · instant' },
   { id: 'fpx',     name: 'Online banking (FPX)',  meta: 'Malaysian banks' },

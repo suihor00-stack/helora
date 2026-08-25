@@ -138,6 +138,90 @@ at github.com → Settings → Developer settings → Personal access tokens →
 
 ---
 
+## Taking payments with Stripe
+
+Checkout sends the customer to Stripe's own payment page. Their card details
+never touch this site, and the price is worked out in the database, so nothing
+the browser sends can change what they're charged.
+
+Set it up once, in this order.
+
+### 1. Run the migration
+
+Supabase → SQL Editor → paste `supabase/migration-04-stripe.sql` → Run.
+
+### 2. Get your Stripe key
+
+[dashboard.stripe.com](https://dashboard.stripe.com) → **Developers** →
+**API keys** → copy the **Secret key**.
+
+Start in **Test mode** (the toggle at the top right). Test keys begin
+`sk_test_`, live ones `sk_live_`.
+
+> Never put this key in `js/config.js` or anywhere in this folder. It only ever
+> goes into Supabase's secrets, below.
+
+### 3. Deploy the two functions
+
+Supabase → **Edge Functions** → **Deploy a new function**, twice:
+
+| Name | Paste from |
+|---|---|
+| `create-checkout` | `supabase/functions/create-checkout/index.ts` |
+| `stripe-webhook` | `supabase/functions/stripe-webhook/index.ts` |
+
+**On `stripe-webhook`, turn OFF "Verify JWT".** Stripe can't send a Supabase
+token; the function checks Stripe's own signature instead. If this stays on,
+every webhook is rejected and orders never get marked paid.
+
+### 4. Add the secrets
+
+Supabase → **Edge Functions** → **Secrets**:
+
+| Name | Value |
+|---|---|
+| `STRIPE_SECRET_KEY` | your `sk_test_…` key |
+| `SITE_URL` | `https://helora.suihor00.workers.dev` (no trailing slash) |
+| `CURRENCY` | `myr` |
+
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided automatically.
+
+### 5. Tell Stripe where to send the webhook
+
+Stripe → **Developers** → **Webhooks** → **Add endpoint**.
+
+- URL: `https://ezhcfpuhxwncukzktaeh.supabase.co/functions/v1/stripe-webhook`
+- Events: `checkout.session.completed`,
+  `checkout.session.async_payment_succeeded`,
+  `checkout.session.async_payment_failed`,
+  `checkout.session.expired`
+
+Copy the **Signing secret** (`whsec_…`) and add it to Supabase's secrets as
+`STRIPE_WEBHOOK_SECRET`.
+
+### 6. Switch on the payment methods you want
+
+Stripe → **Settings** → **Payment methods**. In Malaysia you can enable cards,
+**FPX** (online banking) and **GrabPay**. The checkout doesn't hard-code any of
+them — whatever is on in Stripe is what the customer sees.
+
+### 7. Test before going live
+
+With test keys, pay using card `4242 4242 4242 4242`, any future expiry, any
+CVC. Then check Supabase → **Table editor** → `orders`: the row should read
+`paid`.
+
+When it works, flip Stripe out of Test mode, swap `STRIPE_SECRET_KEY` for the
+live key, and create a **new** webhook endpoint in live mode (the signing
+secret is different).
+
+### Turning it off again
+
+`CHECKOUT_MODE` in `js/config.js`. Set it to `'record-only'` and checkout goes
+back to saving the order without taking money.
+
+---
+
 ## How the code is laid out
 
 ```
@@ -159,6 +243,10 @@ supabase/
   migration-01-*.sql    original price (compare_at_cents)
   migration-02-*.sql    bilingual products + user-managed spec fields
   migration-03-*.sql    user-managed collections
+  migration-04-*.sql    Stripe payment columns
+  functions/            Edge Functions — paste these into Supabase's dashboard
+    create-checkout/    turns the bag into a Stripe payment page
+    stripe-webhook/     marks the order paid when Stripe says so
 _headers                security settings Cloudflare applies
 ```
 
@@ -207,6 +295,11 @@ achieves nothing.
 - Spec rows on the product page come from the `product_fields` table, not from
   hard-coded columns. Don't reintroduce fixed spec fields; the shop owner
   manages them in 後台 → 欄位設定.
+- Payment runs through Stripe Checkout — there is no Stripe.js on the page and
+  no publishable key, just a redirect to the session URL. The secret key lives
+  only in Supabase's Edge Function secrets; never read it from the browser.
+- The webhook verifies Stripe's signature by hand in `stripe-webhook`. Don't
+  loosen the timestamp tolerance or swap the constant-time compare.
 - Collections come from the `collections` table via `js/collections.js`, loaded
   once in `boot()`. `COLLECTIONS` in `config.js` is only the seed list and the
   offline fallback — don't read it directly for anything the shop renders.
@@ -217,16 +310,9 @@ achieves nothing.
 
 ## Not built yet
 
-**Taking real money.** Checkout collects the order, saves it to the database
-with the status `pending_payment`, and shows the confirmation page — but no
-money moves. Choosing DuitNow or FPX right now just records which one the
-customer picked.
-
-To actually take payments you need a payment provider account
-(Billplz, Stripe, iPay88 or similar) and a small server-side piece to talk to
-them, because that step needs a secret key that can't live in the browser. A
-Cloudflare Worker or Supabase Edge Function is the usual place for it. Ask
-Claude to set it up once you've picked a provider.
+**Order emails.** Nothing is emailed yet, to you or the customer. Stripe sends
+its own receipt, but a HELORA-branded confirmation would need a Supabase Edge
+Function plus an email service (Resend is the usual choice).
 
 **Other things worth doing later**
 
