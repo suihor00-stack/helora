@@ -335,13 +335,13 @@ function editScreen(p) {
           <div class="a-f a-full">
             <label class="a-l" for="name">${L('英文名稱', 'Name (EN)')} <span class="a-req">必填</span></label>
             <input class="a-i" id="name" name="name" required value="${esc(p?.name || '')}"
-                   placeholder="Aura Fine Band">
-            <p class="a-note">網站上顯示的就是這個</p>
+                   placeholder="The Solace Pendant">
+            <p class="a-note">商品卡和彈窗上顯示的名字</p>
           </div>
           <div class="a-f a-full">
             <label class="a-l" for="name_zh">${L('中文名稱', 'Name (中文)')}</label>
             <input class="a-i" id="name_zh" name="name_zh" value="${esc(p?.name_zh || '')}"
-                   placeholder="Aura 細戒">
+                   placeholder="Solace 墜飾">
           </div>
           <div class="a-f">
             <label class="a-l" for="price">${L(`價錢（${SITE.currency}）`, 'Price')} <span class="a-req">必填</span></label>
@@ -372,7 +372,8 @@ function editScreen(p) {
           <div class="a-f a-full">
             <label class="a-l" for="description">${L('英文描述', 'Description (EN)')}</label>
             <textarea class="a-i" id="description" name="description" rows="4"
-                      placeholder="The story, the details, when to wear it…">${esc(p?.description || '')}</textarea>
+                      placeholder="Hand-finished in our London studio…">${esc(p?.description || '')}</textarea>
+            <p class="a-note">客人點開商品時看到的介紹</p>
           </div>
           <div class="a-f a-full">
             <label class="a-l" for="description_zh">${L('中文描述', 'Description (中文)')}</label>
@@ -413,6 +414,9 @@ function editScreen(p) {
         </p>
 
         <div class="a-sec">顯示設定 <span class="a-en">Visibility</span></div>
+        <p class="a-note" style="margin-top:-6px">
+          「在網站上公開」和「有庫存」會生效；前兩個是舊版首頁用的，新網站目前還沒有那兩個區塊。
+        </p>
         <div class="a-checks">
           <label class="a-check"><input type="checkbox" name="is_new"${p?.is_new ? ' checked' : ''}><span>放上首頁「新品上市」</span></label>
           <label class="a-check"><input type="checkbox" name="is_pick"${p?.is_pick ? ' checked' : ''}><span>放上首頁「HELORA 精選」</span></label>
@@ -421,6 +425,11 @@ function editScreen(p) {
         </div>
 
         <div class="a-sec">規格 <span class="a-en">Specifications</span></div>
+        <p class="a-note" style="margin-top:-6px">
+          「材質」和「寶石 / 細節」會合併成商品卡上那行小字，中間自動加上「·」。
+          例如填 <code>14k recycled gold</code> 和 <code>freshwater pearl</code>，
+          網站上會顯示 <code>14k recycled gold · freshwater pearl</code>。
+        </p>
         ${fieldsReady ? '' : `<div class="a-msg a-warn">
         資料庫還沒更新。請先到 Supabase → SQL Editor，
         跑一次 <code>supabase/migration-02-bilingual-and-fields.sql</code>，
@@ -442,7 +451,7 @@ function editScreen(p) {
              <button class="a-mini" type="button" data-tab-fields>去欄位設定新增</button></p>`}
 
         <details class="a-adv">
-          <summary>進階設定（排序、網址代號 — 平常可以不用管）</summary>
+          <summary>進階設定（排序、網址代號 — 新網站上不會顯示，平常不用管）</summary>
           <div class="a-grid" style="margin-top:18px">
             <div class="a-f">
               <label class="a-l" for="tag">${L('名字上方的小標', 'Tag')}</label>
