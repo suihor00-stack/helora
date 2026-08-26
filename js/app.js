@@ -642,6 +642,13 @@ function setupNotice() {
  */
 async function handleStripeReturn() {
   const params = new URLSearchParams(location.search);
+
+  // Backed out of Stripe — put them back on checkout with the bag intact.
+  if (params.get('cancelled') === '1') {
+    history.replaceState(null, '', `${location.pathname}#checkout`);
+    return false;
+  }
+
   const orderNo = params.get('order');
   if (!orderNo || params.get('paid') !== '1') return false;
 

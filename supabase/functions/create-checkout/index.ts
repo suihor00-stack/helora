@@ -14,7 +14,28 @@
  */
 
 const STRIPE_KEY   = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
-const SITE_URL     = (Deno.env.get('SITE_URL') ?? '').replace(/\/+$/, '');
+
+/**
+ * Stripe rejects a return address that isn't a full URL, and the error it
+ * gives back ("Not a valid URL") doesn't say which one. So tidy up the usual
+ * slips here — a missing scheme, a trailing slash, stray whitespace — and
+ * check it parses before we ever call Stripe.
+ */
+function normaliseSiteUrl(raw: string): { url: string; error?: string } {
+  let v = (raw ?? '').trim().replace(/\/+$/, '');
+  if (!v) return { url: '', error: 'SITE_URL 沒有設定。' };
+  if (!/^https?:\/\//i.test(v)) v = `https://${v}`;
+  try {
+    const parsed = new URL(v);
+    if (!/^https?:$/.test(parsed.protocol)) throw new Error('bad scheme');
+    return { url: v };
+  } catch {
+    return { url: '', error: `SITE_URL 的值不是有效網址：「${raw}」` };
+  }
+}
+
+const SITE = normaliseSiteUrl(Deno.env.get('SITE_URL') ?? '');
+const SITE_URL = SITE.url;
 const CURRENCY     = (Deno.env.get('CURRENCY') ?? 'myr').toLowerCase();
 const SB_URL       = Deno.env.get('SUPABASE_URL') ?? '';
 const SB_SERVICE   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -72,7 +93,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST')    return json({ error: 'Method not allowed' }, 405);
 
   if (!STRIPE_KEY) return json({ error: '付款還沒設定好（少了 STRIPE_SECRET_KEY）。' }, 500);
-  if (!SITE_URL)   return json({ error: '付款還沒設定好（少了 SITE_URL）。' }, 500);
+  if (SITE.error)  return json({ error: `付款還沒設定好：${SITE.error}` }, 500);
 
   try {
     const { customer, items } = await req.json();
@@ -105,8 +126,8 @@ Deno.serve(async (req) => {
       mode: 'payment',
       client_reference_id: orderNo,
       customer_email: customer?.email ?? undefined,
-      success_url: `${SITE_URL}/?order=${encodeURIComponent(orderNo)}&paid=1#confirmed`,
-      cancel_url:  `${SITE_URL}/#checkout`,
+      success_url: `${SITE_URL}/?order=${encodeURIComponent(orderNo)}&paid=1`,
+      cancel_url:  `${SITE_URL}/?cancelled=1`,
       metadata: { order_no: orderNo },
       payment_intent_data: { metadata: { order_no: orderNo } },
       line_items: lines.map((l) => ({
