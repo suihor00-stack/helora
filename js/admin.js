@@ -13,7 +13,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 /* 分類的中文名字，只用在後台；前台維持 config.js 的英文。 */
 const COL_NAME = {
-  rings: '戒指', earrings: '耳環', moiss: '莫桑石', cz: '鋯石',
+  necklaces: '項鍊', rings: '戒指', earrings: '耳環', moiss: '莫桑石', cz: '鋯石',
   gold: '鍍金', silver: '925 純銀', everyday: '日常', minimal: '極簡',
   statement: '個性款', gifts: '送禮', edit: '編輯精選',
   newin: '新品上市', picks: 'HELORA 精選'
@@ -278,7 +278,11 @@ function listScreen() {
           <tbody>
             ${products.map((p) => {
               const img  = (p.product_images || []).sort((a, b) => a.sort_order - b.sort_order)[0];
-              const cols = (p.product_collections || []).map((c) => COL_NAME[c.collection_slug] || c.collection_slug);
+              // 先查資料庫裡的分類（含你自己新增的），查不到才退回寫死的對照表
+              const tags = (p.product_collections || []).map((c) => {
+                const hit = cols.find((x) => x.slug === c.collection_slug);
+                return (hit && colLabel(hit)) || COL_NAME[c.collection_slug] || c.collection_slug;
+              });
               const sale = p.compare_at_cents > p.price_cents;
               return `
               <tr>
@@ -293,7 +297,7 @@ function listScreen() {
                   ${SITE.currency} ${(p.price_cents / 100).toFixed(2)}
                   ${sale ? `<div class="a-sub" style="text-decoration:line-through">${SITE.currency} ${(p.compare_at_cents / 100).toFixed(2)}</div>` : ''}
                 </td>
-                <td class="a-sub">${cols.length ? esc(cols.join('、')) : '—'}</td>
+                <td class="a-sub">${tags.length ? esc(tags.join('、')) : '—'}</td>
                 <td class="a-sub">${[p.is_new && '新品', p.is_pick && '精選'].filter(Boolean).join('、') || '—'}</td>
                 <td class="a-right">
                   <button class="a-link" type="button" data-edit="${esc(p.id)}">編輯</button>

@@ -8,10 +8,62 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231a1a1a'/><text x='50' y='68' font-size='58' font-family='Georgia,serif' text-anchor='middle' fill='%23fff'>H</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./css/helora.css">
 <style>
-  body { background: #fbfaf8; }
+  /* ------------------------------------------------------------------
+     跟 helora-store 那個新網站同一套視覺。
+     色值直接沿用它 src/index.css 裡的 HSL，字體也是同三款。
+     只影響後台 —— 前台 index.html 維持原本的設計。
+     ------------------------------------------------------------------ */
+  :root {
+    --bg:         hsl(37 32% 93%);   /* 暖米色底 */
+    --card:       hsl(38 36% 96%);   /* 卡片、表格 */
+    --ink:        hsl(27 18% 15%);   /* 標題、按鈕 */
+    --body:       hsl(27 10% 39%);   /* 內文 */
+    --muted:      hsl(27 10% 45%);   /* 標籤 */
+    --soft:       hsl(27 10% 56%);   /* 提示、次要文字 */
+    --ghost:      hsl(30 14% 66%);
+    --eyebrow:    hsl(27 10% 56%);
+    --line:       hsl(30 22% 79%);
+    --line-soft:  hsl(35 20% 84%);
+    --line-faint: hsl(35 20% 88%);
+    --field:      hsl(30 22% 76%);
+    --accent:     hsl(11 39% 64%);   /* 磚紅，用在必填、刪除 */
+
+    --serif: 'Instrument Serif', Georgia, serif;
+    --sans:  'Manrope', system-ui, sans-serif;
+    --mono:  'DM Mono', ui-monospace, monospace;
+    --radius: 4px;
+  }
+
+  body { background: var(--bg); color: var(--body); }
+
+  /* 新站是圓角 4px，舊後台是直角 —— 統一過來 */
+  .a-card, .a-table, .a-i, .a-thumb, .a-img, .a-add,
+  .a-empty, .a-err, .a-msg, .btn, .btn-ghost, .a-x { border-radius: var(--radius); }
+  .a-x { border-radius: 50%; }
+
+  .a-card, .a-table { background: var(--card); }
+  .a-bar { background: var(--card); }
+  .a-i { background: var(--card); }
+  .a-i:focus { border-color: var(--ink); box-shadow: 0 0 0 3px hsl(27 18% 15% / .07); }
+
+  .a-h1 { letter-spacing: -.01em; }
+  .a-logo { letter-spacing: .26em; }
+  .a-req { color: var(--accent); }
+  .a-danger:hover { color: var(--accent); }
+  .a-sub code, .a-warn code { font-family: var(--mono); background: hsl(35 22% 88%); }
+
+  .btn { background: var(--ink); }
+  .btn:hover { background: hsl(27 18% 10%); }
+
+  .a-check input { accent-color: hsl(27 18% 15%); }
+  .a-off input { background: hsl(35 20% 88%); }
+  .a-hint { background: hsl(38 36% 96%); border-color: var(--field); }
+  .a-warn { background: hsl(38 45% 90%); border-color: hsl(35 35% 78%); color: hsl(30 30% 30%); }
+  .a-msg { background: hsl(120 12% 90%); border-color: hsl(120 14% 76%); color: hsl(140 20% 26%); }
+  .a-err { background: hsl(11 45% 93%); border-color: hsl(11 39% 78%); color: hsl(8 45% 38%); }
 
   .a-bar {
     display: flex; align-items: center; justify-content: space-between;
