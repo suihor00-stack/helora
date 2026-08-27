@@ -3,46 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HELORA — Hello, Aura.</title>
-<meta name="description" content="HELORA — distinctive jewelry for everyday expression. Rings and earrings in 925 sterling silver and 18K gold vermeil. Complimentary delivery across Malaysia &amp; Singapore.">
-<meta name="theme-color" content="#ffffff">
-<!-- 這個前台已經被 heloraatelier.com 取代，只留 /admin 在用。
-     擋住搜尋引擎，免得廢棄的版本跟正式店面在搜尋結果裡打架。 -->
+<title>HELORA</title>
+
+<!-- 這個網域只留後台（/admin）在用。店面已經搬到 heloraatelier.com，
+     所以這頁只做一件事：把人和搜尋引擎都送過去。
+     舊版店面的程式還在 git 歷史裡，需要的話找得回來。 -->
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://heloraatelier.com/">
+<meta http-equiv="refresh" content="0; url=https://heloraatelier.com/">
+<script>location.replace('https://heloraatelier.com/');</script>
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="HELORA — Hello, Aura.">
-<meta property="og:description" content="Distinctive jewelry for everyday expression.">
-<meta name="twitter:card" content="summary_large_image">
-
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23fff'/><text x='50' y='68' font-size='58' font-family='Georgia,serif' text-anchor='middle' fill='%231a1a1a'>H</text></svg>">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/helora.css">
+<style>
+  body {
+    margin: 0; min-height: 100vh;
+    display: grid; place-items: center;
+    background: #f3ede4; color: #2d2721;
+    font: 400 15px/1.8 Manrope, system-ui, sans-serif;
+    text-align: center; padding: 24px;
+  }
+  .n { font: 500 26px/1 Georgia, serif; letter-spacing: .3em; text-indent: .3em; margin-bottom: 18px; }
+  a { color: #2d2721; }
+</style>
 </head>
 <body>
-
-<div class="moved">
-  這是舊版的 HELORA。正式店面已經搬到
-  <a href="https://heloraatelier.com">heloraatelier.com</a>。
-</div>
-
-<div id="notice"></div>
-<header id="hd"></header>
-<main id="main"></main>
-<footer id="ft"></footer>
-<div id="overlays"></div>
-
-<noscript>
-  <div style="padding:60px 24px;text-align:center;font:300 16px/1.9 Inter,system-ui,sans-serif;color:#5f5a51">
-    <div style="font:500 28px/1 'Playfair Display',Georgia,serif;letter-spacing:.3em;margin-bottom:20px">HELORA</div>
-    HELORA needs JavaScript switched on to show the collection. Please enable it and reload.
+  <!-- 只有在 JS 和 meta refresh 都失效時才看得到 -->
+  <div>
+    <div class="n">HELORA</div>
+    <p>店面已經搬到 <a href="https://heloraatelier.com/">heloraatelier.com</a></p>
   </div>
-</noscript>
-
-<script type="module" src="./js/app.js"></script>
 </body>
 </html>
