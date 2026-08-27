@@ -701,6 +701,18 @@ a { color: var(--ink); text-decoration: none; }
 
 .empty-note { grid-column: 1 / -1; text-align: center; padding: 60px 0; font: 300 15px/1.8 var(--sans); color: var(--soft); }
 
+/* 舊前台頂端的搬家通知 */
+.moved {
+  padding: 13px 20px;
+  background: var(--ink);
+  color: #fff;
+  text-align: center;
+  font: 400 12.5px/1.7 var(--sans);
+  letter-spacing: .02em;
+}
+.moved a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.moved a:hover { opacity: .75; }
+
 .banner {
   padding: 14px 20px;
   background: #fdf6e7;

@@ -1,6 +1,13 @@
 # HELORA
 
-**Live at <https://helora.suihor00.workers.dev>** — the admin is at `/admin`.
+**The shop customers see is <https://heloraatelier.com>** — built separately in
+the `helora-store` repo and hosted on Cloudflare Pages.
+
+**This project is now the admin**, at <https://helora.suihor00.workers.dev/admin>.
+It manages the products, collections and spec fields that the shop reads out of
+Supabase. The storefront in this repo (`index.html`) has been superseded: it
+still runs, but it carries a noindex and a banner pointing at the new address,
+so search engines drop the old version rather than competing with the real one.
 
 An online jewelry shop. Built from the HELORA design in Claude Design, running
 as a plain website on Cloudflare, with Supabase holding the products and orders.
@@ -61,7 +68,7 @@ automatically.
 
 ### 4. Make yourself the admin
 
-1. Open `https://helora.suihor00.workers.dev/admin` (Cloudflare strips the
+1. Open <https://helora.suihor00.workers.dev/admin> (Cloudflare strips the
    `.html`, so `/admin.html` redirects there).
 2. Enter your email and a password, click **First time? Create the account**.
 3. Back in Supabase → **SQL Editor**, run this with your own email:
@@ -182,6 +189,11 @@ Supabase → **Edge Functions** → **Secrets**:
 |---|---|
 | `STRIPE_SECRET_KEY` | your `sk_test_…` key |
 | `SITE_URL` | `https://helora.suihor00.workers.dev` (no trailing slash) |
+
+> `SITE_URL` still points here because the Stripe checkout lives on this
+> project's storefront. When checkout moves to heloraatelier.com, change this
+> secret **and** create a fresh webhook — otherwise customers are returned to
+> the wrong address after paying.
 | `CURRENCY` | `myr` |
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided automatically.

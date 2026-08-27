@@ -1,4 +1,7 @@
+# 這個網域只留後台在用，正式店面在 https://heloraatelier.com
+#
+# 這裡故意「允許」爬取 —— 搜尋引擎要能讀到頁面，才看得到裡面的
+# noindex 標籤和 _headers 送出的 X-Robots-Tag。全站封鎖反而會讓
+# 網址繼續留在搜尋結果裡（只是沒有描述）。
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /admin.html
