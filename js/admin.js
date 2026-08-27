@@ -228,7 +228,8 @@ const bar = (active) => `
       </button>
     </span>
     <span class="a-bar-r">
-      <a class="a-link" href="./index.html" target="_blank" rel="noopener">看網站 ↗</a>
+      <a class="a-link" href="${esc(SITE.shopUrl || './index.html')}"
+         target="_blank" rel="noopener">看網站 ↗</a>
       <button class="a-link" type="button" data-signout>登出</button>
     </span>
   </div>`;

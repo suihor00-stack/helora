@@ -23,6 +23,9 @@ export const SUPABASE_ANON_KEY = 'sb_publishable_Bfqp2LmEcHTq38MG-fCfBw_Wc76IiHw
 
 export const SITE = {
   name:     'HELORA',
+  /* 客人看的店面。後台右上角的「看網站」會連到這裡。
+     之後換成自己的域名（例如 https://heloraatelier.com）只要改這一行。 */
+  shopUrl:  'https://helora-store.pages.dev',
   tagline:  'Hello, Aura.',
   blurb:    'Distinctive jewelry for everyday expression — made to feel like you.',
   currency: 'RM',              // shown next to every price
